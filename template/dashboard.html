@@ -43,46 +43,6 @@
             font-size: 2em;
         }
 
-        /* Status Box */
-        .status-box {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .status-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .status-state {
-            font-size: 1.3em;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-weight: bold;
-            display: inline-block;
-            min-width: 250px;
-        }
-
-        .status-state.ok {
-            background: #28a745;
-        }
-
-        .status-state.incident {
-            background: #dc3545;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
         /* Metrics Cards */
         .metrics {
             display: grid;
@@ -143,27 +103,75 @@
             color: #667eea;
         }
 
-        /* Alert Counter */
-        .alert-section {
+        /* Incident Management Container */
+        .incident-container {
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 30px;
+            border-radius: 15px;
             margin-bottom: 20px;
+            transition: all 0.5s ease;
+        }
+
+        .incident-container.normal {
+            border: 3px solid #51cf66;
+            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.3);
+        }
+
+        .incident-container.incident {
+            border: 3px solid #ff6b6b;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .status-section {
+            margin-bottom: 25px;
+        }
+
+        .status-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
             text-align: center;
         }
 
+        .status-state {
+            font-size: 1.3em;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status-state.ok {
+            background: #28a745;
+        }
+
+        .status-state.incident {
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Alert Counter */
         .alert-counter {
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
             color: #666;
+            text-align: center;
+            margin: 15px 0;
         }
 
         /* Operators */
         .operators {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin: 20px 0;
         }
 
         .operator {
@@ -171,8 +179,7 @@
             padding: 20px;
             border-radius: 10px;
             font-weight: bold;
-            text-align: center;
-            font-size: 1.1em;
+            font-size: 1em;
             animation: slideIn 0.5s ease-out;
         }
 
@@ -205,50 +212,97 @@
             border: 2px solid #17a2b8;
         }
 
-        /* Comment Box */
-        .comment-box {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            transition: all 0.5s ease;
-        }
-
-        .comment-box.normal {
-            border: 3px solid #51cf66;
-            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.3);
-        }
-
-        .comment-box.incident {
-            border: 3px solid #ff6b6b;
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
-        }
-
-        .comment-box h3 {
-            color: #333;
+        .operator-header {
+            font-size: 1.1em;
             margin-bottom: 15px;
-            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .comment-box textarea {
-            width: 100%;
-            height: 100px;
-            padding: 12px;
+        .ack-section {
+            background: white;
+            padding: 15px;
             border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .ack-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .ack-checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .ack-checkbox-container label {
+            font-size: 0.95em;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .comment-area {
+            margin-top: 10px;
+        }
+
+        .comment-area textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border-radius: 6px;
             border: 2px solid #ddd;
             resize: vertical;
             font-family: inherit;
-            font-size: 1em;
-            transition: border-color 0.3s ease;
+            font-size: 0.95em;
         }
 
-        .comment-box textarea:focus {
+        .comment-area textarea:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .comment-box button {
+        .btn-validate {
             margin-top: 10px;
-            padding: 12px 30px;
+            padding: 8px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-validate:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .validation-info {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            border: 1px solid #c3e6cb;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 12px 20px;
             color: white;
             border: none;
             border-radius: 8px;
@@ -258,22 +312,13 @@
             transition: all 0.3s ease;
         }
 
-        .comment-box.normal button {
-            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+        .btn-history {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .comment-box.normal button:hover {
+        .btn-history:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.4);
-        }
-
-        .comment-box.incident button {
-            background: linear-gradient(135deg, #ff6b6b 0%, #f03e3e 100%);
-        }
-
-        .comment-box.incident button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -288,20 +333,16 @@
             h1 {
                 font-size: 1.5em;
             }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body class="normal">
     <div class="container">
         <h1>🌡️ Dashboard Température & Humidité (DHT11)</h1>
-
-        <!-- Status Box -->
-        <div class="status-box">
-            <div class="status-title">État de l'incident</div>
-            <div id="statusState" class="status-state ok">
-                ✅ Pas d'incident
-            </div>
-        </div>
 
         <!-- Metrics Cards -->
         <div class="metrics">
@@ -324,36 +365,159 @@
             </div>
         </div>
 
-        <!-- Alert Counter -->
-        <div class="alert-section">
-            <div class="alert-counter" id="alert-counter">
-                Compteur d'alertes : 0
+        <!-- Incident Management Container -->
+        <div class="incident-container normal" id="incidentContainer">
+            <!-- Status Section -->
+            <div class="status-section">
+                <div class="status-title">État de l'incident</div>
+                <div id="statusState" class="status-state ok">
+                    ✅ Pas d'incident
+                </div>
+                <div class="alert-counter" id="alertCounter">
+                    Compteur d'alertes : 0
+                </div>
             </div>
-        </div>
 
-        <!-- Operators -->
-        <div class="operators">
-            <div class="operator op1" id="op1">
-                ⚠️ Opérateur 1 - Alerte Niveau 1 activée
-            </div>
-            <div class="operator op2" id="op2">
-                🚨 Opérateur 2 - Alerte Niveau 2 activée
-            </div>
-            <div class="operator op3" id="op3">
-                🔴 Opérateur 3 - Alerte Niveau 3 activée
-            </div>
-        </div>
+            <!-- Operators -->
+            <div class="operators">
+                <!-- Opérateur 1 -->
+                <div class="operator op1" id="op1">
+                    <div class="operator-header">
+                        ⚠️ Opérateur 1 - Alerte Niveau 1 activée
+                    </div>
+                    <div class="ack-section">
+                        <div class="ack-checkbox-container">
+                            <input type="checkbox" id="ackCheckbox1">
+                            <label for="ackCheckbox1">J'accuse réception de cet incident</label>
+                        </div>
+                        <div class="comment-area">
+                            <textarea id="commentText1" placeholder="Écrire un commentaire..."></textarea>
+                        </div>
+                        <button class="btn-validate" onclick="validateOperator(1)">Valider</button>
+                        <div id="validationInfo1" style="display:none;" class="validation-info"></div>
+                    </div>
+                </div>
 
-        <!-- Comment Box -->
-        <div class="comment-box normal" id="commentBox">
-            <h3>📝 Accusé de réception & Commentaire</h3>
-            <textarea placeholder="Écrire un commentaire sur l'incident..."></textarea>
-            <button>Envoyer</button>
+                <!-- Opérateur 2 -->
+                <div class="operator op2" id="op2">
+                    <div class="operator-header">
+                        🚨 Opérateur 2 - Alerte Niveau 2 activée
+                    </div>
+                    <div class="ack-section">
+                        <div class="ack-checkbox-container">
+                            <input type="checkbox" id="ackCheckbox2">
+                            <label for="ackCheckbox2">J'accuse réception de cet incident</label>
+                        </div>
+                        <div class="comment-area">
+                            <textarea id="commentText2" placeholder="Écrire un commentaire..."></textarea>
+                        </div>
+                        <button class="btn-validate" onclick="validateOperator(2)">Valider</button>
+                        <div id="validationInfo2" style="display:none;" class="validation-info"></div>
+                    </div>
+                </div>
+
+                <!-- Opérateur 3 -->
+                <div class="operator op3" id="op3">
+                    <div class="operator-header">
+                        🔴 Opérateur 3 - Alerte Niveau 3 activée
+                    </div>
+                    <div class="ack-section">
+                        <div class="ack-checkbox-container">
+                            <input type="checkbox" id="ackCheckbox3">
+                            <label for="ackCheckbox3">J'accuse réception de cet incident</label>
+                        </div>
+                        <div class="comment-area">
+                            <textarea id="commentText3" placeholder="Écrire un commentaire..."></textarea>
+                        </div>
+                        <button class="btn-validate" onclick="validateOperator(3)">Valider</button>
+                        <div id="validationInfo3" style="display:none;" class="validation-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-history" onclick="location.href='/incident_history/'">
+                    📜 Historique des incidents
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         let alertCount = 0;
+        const STORAGE_KEY_PREFIX = 'operator_validation_';
+        const STORAGE_ALERT_COUNT = 'alert_count';
+
+        // Charger le compteur d'alertes depuis localStorage
+        function loadAlertCount() {
+            const saved = localStorage.getItem(STORAGE_ALERT_COUNT);
+            if (saved) {
+                alertCount = parseInt(saved, 10);
+            }
+        }
+
+        // Sauvegarder le compteur d'alertes
+        function saveAlertCount() {
+            localStorage.setItem(STORAGE_ALERT_COUNT, alertCount.toString());
+        }
+
+        // Charger les validations depuis localStorage
+        function loadValidations() {
+            for (let i = 1; i <= 3; i++) {
+                const saved = localStorage.getItem(STORAGE_KEY_PREFIX + i);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    document.getElementById('ackCheckbox' + i).checked = data.acknowledged;
+                    document.getElementById('commentText' + i).value = data.comment;
+
+                    if (data.acknowledged) {
+                        showValidationInfo(i, data);
+                    }
+                }
+            }
+        }
+
+        // Afficher les informations de validation
+        function showValidationInfo(operatorNum, data) {
+            const infoDiv = document.getElementById('validationInfo' + operatorNum);
+            const date = new Date(data.timestamp);
+            infoDiv.innerHTML = `✓ Accusé de réception validé le ${date.toLocaleString('fr-FR')}<br>Commentaire: ${data.comment}`;
+            infoDiv.style.display = 'block';
+        }
+
+        // Valider un opérateur
+        function validateOperator(operatorNum) {
+            const checkbox = document.getElementById('ackCheckbox' + operatorNum);
+            const comment = document.getElementById('commentText' + operatorNum).value;
+
+            if (!checkbox.checked) {
+                alert('Veuillez cocher l\'accusé de réception avant de valider.');
+                return;
+            }
+
+            if (!comment.trim()) {
+                alert('Veuillez ajouter un commentaire.');
+                return;
+            }
+
+            const validationData = {
+                operator: operatorNum,
+                acknowledged: true,
+                comment: comment,
+                timestamp: new Date().toISOString()
+            };
+
+            // Sauvegarder dans localStorage
+            localStorage.setItem(STORAGE_KEY_PREFIX + operatorNum, JSON.stringify(validationData));
+
+            // Afficher les informations
+            showValidationInfo(operatorNum, validationData);
+
+            alert(`Validation de l'Opérateur ${operatorNum} enregistrée avec succès !`);
+
+            // Optionnel: Envoyer au serveur (Étape 3)
+            // sendToServer(validationData);
+        }
 
         function getTimeElapsed(timestamp) {
             const now = new Date();
@@ -361,7 +525,6 @@
             const diffMs = now - past;
             const diffSec = Math.floor(diffMs / 1000);
 
-            // Si moins d'un jour (86400 secondes)
             if (diffSec < 86400) {
                 const hours = Math.floor(diffSec / 3600);
                 const minutes = Math.floor((diffSec % 3600) / 60);
@@ -375,7 +538,6 @@
                 return `Il y a ${parts.join(' ')}`;
             }
 
-            // Si plus d'un jour, calculer années, mois, jours
             const diffDays = Math.floor(diffSec / 86400);
             const years = Math.floor(diffDays / 365);
             const months = Math.floor((diffDays % 365) / 30);
@@ -409,52 +571,58 @@
                 const bodyElement = document.body;
                 const tempCard = document.getElementById("tempCard");
                 const humCard = document.getElementById("humCard");
-                const commentBox = document.getElementById("commentBox");
+                const incidentContainer = document.getElementById("incidentContainer");
 
                 if (t < 2 || t > 8) {
                     // INCIDENT
-                    statusElement.textContent = "⚠️ INCIDENT : Température hors plage (2-8°C) !";
+                    statusElement.textContent = `⚠️ INCIDENT : Température hors plage (2-8°C) ! Température actuelle: ${t.toFixed(1)}°C`;
                     statusElement.className = "status-state incident";
                     bodyElement.className = "incident";
                     tempCard.className = "metric-card incident";
                     humCard.className = "metric-card incident";
-                    commentBox.className = "comment-box incident";
+                    incidentContainer.className = "incident-container incident";
+
                     alertCount++;
+                    saveAlertCount();
                 } else {
-                    // NORMAL
+                    // NORMAL - réinitialiser le compteur
                     statusElement.textContent = "✅ Pas d'incident";
                     statusElement.className = "status-state ok";
                     bodyElement.className = "normal";
                     tempCard.className = "metric-card normal";
                     humCard.className = "metric-card normal";
-                    commentBox.className = "comment-box normal";
-                    alertCount = 0;
+                    incidentContainer.className = "incident-container normal";
+
+                    if (alertCount > 0) {
+                        // L'incident est terminé, on peut réinitialiser
+                        alertCount = 0;
+                        saveAlertCount();
+                        // Effacer les validations
+                        for (let i = 1; i <= 3; i++) {
+                            localStorage.removeItem(STORAGE_KEY_PREFIX + i);
+                        }
+                    }
                 }
 
                 // Mise à jour du compteur
-                document.getElementById("alert-counter").textContent =
-                    "Compteur d'alertes : " + alertCount;
+                document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + alertCount;
 
-                // Gestion des opérateurs
-                document.getElementById("op1").style.display =
-                    alertCount > 0 ? "block" : "none";
-
-                document.getElementById("op2").style.display =
-                    alertCount > 3 ? "block" : "none";
-
-                document.getElementById("op3").style.display =
-                    alertCount > 6 ? "block" : "none";
+                // Affichage des opérateurs selon le compteur
+                document.getElementById("op1").style.display = alertCount > 0 ? "block" : "none";
+                document.getElementById("op2").style.display = alertCount > 3 ? "block" : "none";
+                document.getElementById("op3").style.display = alertCount > 6 ? "block" : "none";
 
             } catch (error) {
                 console.error("Erreur lors de la récupération des données:", error);
-                document.getElementById("statusState").textContent =
-                    "❌ Erreur de connexion au serveur";
+                document.getElementById("statusState").textContent = "❌ Erreur de connexion au serveur";
                 document.getElementById("statusState").className = "status-state incident";
                 document.body.className = "incident";
             }
         }
 
         // Chargement initial
+        loadAlertCount();
+        loadValidations();
         loadLatest();
 
         // Rafraîchissement automatique toutes les 8 secondes

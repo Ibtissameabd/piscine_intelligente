@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Archives des incidents</title>
+  <style>
+    body{font-family:Arial;background:#f6f8fb;margin:0;padding:30px}
+    .box{background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eaeaea;text-align:left}
+    th{background:#f2f5ff}
+    a{color:#1f6feb;text-decoration:none}
+  </style>
+</head>
+<body>
+  <a href="/">← Retour au dashboard</a>
+  <h1>Archives des incidents (fermés)</h1>
+
+  <div class="box">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Début</th>
+          <th>Fin</th>
+          <th>Max Temp</th>
+          <th>Compteur</th>
+          <th>Détails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in incidents %}
+        <tr>
+          <td>#{{ inc.id }}</td>
+          <td>{{ inc.created_at|date:"d/m/Y H:i:s" }}</td>
+          <td>{{ inc.ended_at|date:"d/m/Y H:i:s" }}</td>
+          <td>{{ inc.max_temp }} °C</td>
+          <td>{{ inc.counter }}</td>
+          <td><a href="{% url 'incident_detail' inc.id %}">Voir</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">Aucun incident archivé.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
