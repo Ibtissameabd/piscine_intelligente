@@ -108,6 +108,18 @@ function renderIncidents(incidents) {
             `;
         }
 
+        // Déterminer qui a résolu l'incident
+        let resolvedByText = '';
+        if (!isOpen && (incident.op1_ack || incident.op2_ack || incident.op3_ack)) {
+            if (incident.op1_ack) {
+                resolvedByText = '✓ Résolu par Opérateur 1';
+            } else if (incident.op2_ack) {
+                resolvedByText = '✓ Résolu par Opérateur 2';
+            } else if (incident.op3_ack) {
+                resolvedByText = '✓ Résolu par Opérateur 3';
+            }
+        }
+        
         return `
             <div class="incident-card level-${level} ${statusClass}">
                 <div class="incident-header">
@@ -130,6 +142,12 @@ function renderIncidents(incidents) {
                         <div class="detail-label">📅 Date de fin</div>
                         <div class="detail-value">${endDate ? endDate.toLocaleString('fr-FR') : 'En cours'}</div>
                     </div>
+
+                    ${resolvedByText ? `
+                    <div class="detail-item">
+                        <div class="detail-label">👤 Résolu par</div>
+                        <div class="detail-value">${resolvedByText}</div>
+                    </div>` : ''}
 
                     <div class="detail-item">
                         <div class="detail-label">⏱️ Durée</div>

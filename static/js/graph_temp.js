@@ -48,8 +48,8 @@ function drawChart(labels, temps) {
     const maxTemp = Math.max(...temps);
     const tempRange = maxTemp - minTemp || 1;
 
-    const lowerLimit = 2;
-    const upperLimit = 8;
+    const lowerLimit = 5;
+    const upperLimit = 25;
 
     // Configuration du gradient selon les températures
     if (maxTemp <= lowerLimit) {

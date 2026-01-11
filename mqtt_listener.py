@@ -11,8 +11,8 @@ from DHT.models import Dht11
 from django.utils import timezone
 
 # Variables de configuration
-MIN_OK = 2
-MAX_OK = 8
+MIN_OK = 5
+MAX_OK = 25
 
 
 def on_connect(client, userdata, flags, rc):

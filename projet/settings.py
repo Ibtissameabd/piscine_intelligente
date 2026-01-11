@@ -75,6 +75,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'projet.wsgi.application'
 
+# Login settings
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -139,4 +143,10 @@ EMAIL_HOST_PASSWORD = "qkdi ckdj nnhe ebvy"# pas ton vrai mot de passe !
 
 TELEGRAM_BOT_TOKEN = "8365199926:AAG0cLMQJmVyc4NTtODwnZ95rzL-0QBJsH0" # ← token
 TELEGRAM_CHAT_ID = "7595187561" # ← id utilisateur/groupe
+
+# MQTT Settings
+MQTT_HOST = 'localhost'  # or '127.0.0.1'
+MQTT_PORT = 1883
+MQTT_TOPIC_DHT = 'capteur/dht11'
+MQTT_TOPIC_LED_FMT = 'devices/{device_id}/cmd/led'
 

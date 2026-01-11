@@ -1,28 +1,33 @@
 from .models import Dht11, Incident
 from .serializers import Dht11serialize, IncidentSerializer
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from django.utils import timezone
 
 from django.core.mail import send_mail
 from django.conf import settings
 from .utils import send_telegram
 
-MIN_OK = 2
-MAX_OK = 8
+MIN_OK = 5
+MAX_OK = 25
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def Dlist(request):
     all_data = Dht11.objects.all().order_by('dt')
     data = Dht11serialize(all_data, many=True).data
     return Response({'data': data})
 
+@permission_classes([AllowAny])
 class Dhtviews(generics.CreateAPIView):
     queryset = Dht11.objects.all()
     serializer_class = Dht11serialize
+    authentication_classes = []  # Disable authentication for Arduino
 
     def perform_create(self, serializer):
         obj = serializer.save()
@@ -39,19 +44,19 @@ class Dhtviews(generics.CreateAPIView):
         if is_incident:
             # si pas d'incident ouvert -> en créer un
             if incident is None:
-                incident = Incident.objects.create(is_open=True, counter=0, max_temp=t)
+                incident = Incident.objects.create(is_open=True, counter=0, max_temp=t, start_at=obj.dt or timezone.now())
 
             incident.counter += 1
             if t > incident.max_temp:
                 incident.max_temp = t
             incident.save()
 
-            # Alertes (Email, Telegram, WhatsApp)
+            #Alertes (Email, Telegram, WhatsApp)
             try:
                 send_mail(
                     subject="⚠️ Alerte Température",
                     message=f"Température: {t:.1f} °C à {obj.dt}.",
-                    from_email=settings.EMAIL_HOST_USER,
+                    from_email=["abibtissame@gmail.com"],
                     #recipient_list=["elmouss@yahoo.com"],
                     fail_silently=True,
                 )
@@ -99,14 +104,19 @@ class IncidentUpdateOperator(APIView):
         """
         body:
         {
-          "op": 1,
+          "op": 1,  // optional - will be overridden by user's operator number
           "ack": true,
           "comment": "..."
         }
         """
-        op = int(request.data.get("op", 1))
         ack = bool(request.data.get("ack", False))
         comment = request.data.get("comment", "")
+        
+        # Get operator number from user's profile
+        try:
+            operator_number = request.user.profile.operator_number
+        except AttributeError:
+            return Response({"error": "User does not have an operator profile"}, status=400)
 
         incident = Incident.objects.filter(is_open=True).order_by("-start_at").first()
         if not incident:
@@ -114,18 +124,20 @@ class IncidentUpdateOperator(APIView):
 
         now = timezone.now()
 
-        if op == 1:
+        if operator_number == 1:
             incident.op1_ack = ack
             incident.op1_comment = comment
             incident.op1_saved_at = now
-        elif op == 2:
+        elif operator_number == 2:
             incident.op2_ack = ack
             incident.op2_comment = comment
             incident.op2_saved_at = now
-        else:
+        elif operator_number == 3:
             incident.op3_ack = ack
             incident.op3_comment = comment
             incident.op3_saved_at = now
+        else:
+            return Response({"error": "Invalid operator number"}, status=400)
 
         incident.save()
         return Response(IncidentSerializer(incident).data)
@@ -136,3 +148,32 @@ class IncidentListAll(APIView):
         # Récupérer tous les incidents (ouverts et fermés)
         incidents = Incident.objects.all().order_by("-start_at")
         return Response(IncidentSerializer(incidents, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def dashboard_api(request):
+    # Récupérer la dernière mesure
+    last = Dht11.objects.order_by('-dt').first()
+    if last:
+        last_data = {
+            "temp": last.temp,
+            "hum": last.hum,
+            "dt": last.dt.isoformat(),
+        }
+    else:
+        last_data = {"temp": None, "hum": None, "dt": None}
+
+    # Récupérer l'incident en cours
+    incident = Incident.objects.filter(is_open=True).order_by('-start_at').first()
+    if incident:
+        incident_serializer = IncidentSerializer(incident)
+        incident_data = incident_serializer.data
+    else:
+        incident_data = {"is_open": False, "counter": 0}
+
+    # Retourner les deux jeux de données
+    return Response({
+        "latest": last_data,
+        "incident": incident_data
+    })

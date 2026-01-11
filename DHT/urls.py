@@ -6,7 +6,8 @@ urlpatterns = [
     # API endpoints
     path("latest/", views.latest_json, name="latest_json"),
     path("api/",api.Dlist,name='json'),
-    path("api/post",api.Dhtviews.as_view(),name='json'),
+    path("api/post/",api.Dhtviews.as_view(),name='json'),
+    path("api/dashboard/", api.dashboard_api, name="dashboard_api"),
     path('save_acknowledgment/', views.save_acknowledgment, name='save_acknowledgment'),
 
     path("", views.dashboard, name="dashboard"),

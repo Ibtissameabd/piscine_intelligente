@@ -171,10 +171,10 @@ async function loadLatest() {
         const humCard = document.getElementById("humCard");
         const incidentContainer = document.getElementById("incidentContainer");
 
-        if (t < 2 || t > 8) {
+        if (t < 5 || t > 25) {
             // INCIDENT
             if (statusElement) {
-                statusElement.textContent = `⚠️ INCIDENT : Température hors plage (2-8°C) ! Température actuelle: ${t.toFixed(1)}°C`;
+                statusElement.textContent = `⚠️ INCIDENT : Température hors plage (5-25°C) ! Température actuelle: ${t.toFixed(1)}°C`;
                 statusElement.className = "status-state incident";
             }
             

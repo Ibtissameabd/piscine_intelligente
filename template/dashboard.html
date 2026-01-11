@@ -175,12 +175,12 @@
         }
 
         .operator {
-            display: none;
             padding: 20px;
             border-radius: 10px;
             font-weight: bold;
             font-size: 1em;
             animation: slideIn 0.5s ease-out;
+            display: none; /* Will be controlled by JavaScript */
         }
 
         @keyframes slideIn {
@@ -321,6 +321,54 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
+        .logout-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .previous-comments {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .previous-comments h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .comment-entry {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+
+        .comment-header {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .comment-text {
+            margin: 0;
+            color: #212529;
+        }
+
         @media (max-width: 768px) {
             .metrics {
                 grid-template-columns: 1fr;
@@ -342,7 +390,13 @@
 </head>
 <body class="normal">
     <div class="container">
-        <h1>🌡️ Dashboard Température & Humidité (DHT11)</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1>🌡️ Dashboard Température & Humidité (DHT11)</h1>
+                    <div style="text-align: right;">
+                        <p>Bienvenue, <strong>{{ user.username|default:"Invité" }}</strong></p>
+                        <p style="display: none;" id="userOperatorNumber">{{ operator_number|default:0 }}</p>
+                    </div>
+                </div>
 
         <!-- Metrics Cards -->
         <div class="metrics">
@@ -376,10 +430,24 @@
                 <div class="alert-counter" id="alertCounter">
                     Compteur d'alertes : 0
                 </div>
+                <div class="incident-level" id="incidentLevel" style="font-weight: bold; color: #666; margin: 10px 0;">
+                    Niveau d'incident : 0
+                </div>
+                <div class="ack-operator" id="ackOperator" style="font-weight: bold; color: #28a745; margin: 10px 0;">
+                    Opérateur : Aucun
+                </div>
             </div>
 
             <!-- Operators -->
             <div class="operators">
+                <!-- Afficher les commentaires des opérateurs précédents -->
+                <div id="previous-comments" class="previous-comments">
+                    <h3>Commentaires Précédents</h3>
+                    <div id="comments-display"></div>
+                </div>
+                
+                <!-- Afficher la boîte d'acquittement pour l'opérateur connecté -->
+                {% if operator_number %}
                 <!-- Opérateur 1 -->
                 <div class="operator op1" id="op1">
                     <div class="operator-header">
@@ -397,7 +465,6 @@
                         <div id="validationInfo1" style="display:none;" class="validation-info"></div>
                     </div>
                 </div>
-
                 <!-- Opérateur 2 -->
                 <div class="operator op2" id="op2">
                     <div class="operator-header">
@@ -415,7 +482,6 @@
                         <div id="validationInfo2" style="display:none;" class="validation-info"></div>
                     </div>
                 </div>
-
                 <!-- Opérateur 3 -->
                 <div class="operator op3" id="op3">
                     <div class="operator-header">
@@ -433,6 +499,7 @@
                         <div id="validationInfo3" style="display:none;" class="validation-info"></div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <div class="action-buttons">
@@ -441,8 +508,12 @@
                 </button>
             </div>
         </div>
+        <div style="margin-top: 20px; text-align: center; padding: 20px;">
+            <a href="/logout/" class="logout-btn">Déconnexion</a>
+        </div>
     </div>
 
+    
     <script>
         let alertCount = 0;
         const STORAGE_KEY_PREFIX = 'operator_validation_';
@@ -486,7 +557,7 @@
         }
 
         // Valider un opérateur
-        function validateOperator(operatorNum) {
+        async function validateOperator(operatorNum) {
             const checkbox = document.getElementById('ackCheckbox' + operatorNum);
             const comment = document.getElementById('commentText' + operatorNum).value;
 
@@ -501,22 +572,45 @@
             }
 
             const validationData = {
-                operator: operatorNum,
-                acknowledged: true,
-                comment: comment,
-                timestamp: new Date().toISOString()
+                op: operatorNum,  // This will be overridden by the backend
+                ack: true,
+                comment: comment
             };
 
-            // Sauvegarder dans localStorage
-            localStorage.setItem(STORAGE_KEY_PREFIX + operatorNum, JSON.stringify(validationData));
+            // Envoyer au serveur
+            try {
+                const response = await fetch('/incident/update/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(validationData)
+                });
 
-            // Afficher les informations
-            showValidationInfo(operatorNum, validationData);
-
-            alert(`Validation de l'Opérateur ${operatorNum} enregistrée avec succès !`);
-
-            // Optionnel: Envoyer au serveur (Étape 3)
-            // sendToServer(validationData);
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Sauvegarder dans localStorage
+                    const storageData = {
+                        acknowledged: true,
+                        comment: comment,
+                        timestamp: new Date().toISOString()
+                    };
+                    localStorage.setItem(STORAGE_KEY_PREFIX + operatorNum, JSON.stringify(storageData));
+                    
+                    // Afficher les informations
+                    showValidationInfo(operatorNum, storageData);
+                    
+                    alert(`Validation de l'Opérateur ${operatorNum} enregistrée avec succès !`);
+                } else {
+                    console.error('Erreur lors de l\'envoi:', response.statusText);
+                    alert('Erreur lors de l\'envoi de la validation');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur de connexion au serveur');
+            }
         }
 
         function getTimeElapsed(timestamp) {
@@ -551,20 +645,172 @@
             return `Il y a ${parts.join(', ')}`;
         }
 
+        // Déterminer le niveau requis selon le compteur
+        function getRequiredLevel(counter) {
+            if (counter > 6) return 3;
+            if (counter > 3) return 2;
+            if (counter > 0) return 1;
+            return 0;
+        }
+
+        // Afficher les commentaires des opérateurs
+        function displayOperatorComments(incident) {
+            const commentsDisplay = document.getElementById('comments-display');
+            if (!commentsDisplay) return;
+            
+            let commentsHtml = '';
+            
+            if (incident && incident.op1_comment) {
+                commentsHtml += `
+                <div class="comment-entry">
+                    <div class="comment-header">💬 Opérateur 1 ${incident.op1_ack ? '✓' : ''}</div>
+                    <p class="comment-text">${incident.op1_comment}</p>
+                </div>`;
+            }
+            
+            if (incident && incident.op2_comment) {
+                commentsHtml += `
+                <div class="comment-entry">
+                    <div class="comment-header">💬 Opérateur 2 ${incident.op2_ack ? '✓' : ''}</div>
+                    <p class="comment-text">${incident.op2_comment}</p>
+                </div>`;
+            }
+            
+            if (incident && incident.op3_comment) {
+                commentsHtml += `
+                <div class="comment-entry">
+                    <div class="comment-header">💬 Opérateur 3 ${incident.op3_ack ? '✓' : ''}</div>
+                    <p class="comment-text">${incident.op3_comment}</p>
+                </div>`;
+            }
+            
+            if (!commentsHtml) {
+                commentsHtml = '<p>Aucun commentaire précédent</p>';
+            }
+            
+            commentsDisplay.innerHTML = commentsHtml;
+        }
+
+        // Récupérer le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         async function loadLatest() {
             try {
+                // Fetch latest sensor data
                 const response = await fetch("/latest/");
                 const data = await response.json();
 
-                const t = data.temperature;
-                const h = data.humidity;
-                const timeElapsed = getTimeElapsed(data.timestamp);
+                // Check if sensor data is valid
+                if (!data || data.detail === "no data") {
+                    console.warn("No sensor data available from API:", data);
+                    // Set default values when no sensor data is available
+                    document.getElementById("tempValue").textContent = "-- °C";
+                    document.getElementById("humValue").textContent = "-- %";
+                    document.getElementById("tempTime").textContent = "--";
+                    document.getElementById("humTime").textContent = "--";
+                } else {
+                    const t = data.temperature;
+                    const h = data.humidity;
+                    const timeElapsed = data.timestamp ? getTimeElapsed(data.timestamp) : '--';
 
-                // Affichage des valeurs
-                document.getElementById("tempValue").textContent = t.toFixed(1) + " °C";
-                document.getElementById("humValue").textContent = h.toFixed(1) + " %";
-                document.getElementById("tempTime").textContent = timeElapsed;
-                document.getElementById("humTime").textContent = timeElapsed;
+                    // Affichage des valeurs
+                    document.getElementById("tempValue").textContent = t !== null && t !== undefined ? t.toFixed(1) + " °C" : "-- °C";
+                    document.getElementById("humValue").textContent = h !== null && h !== undefined ? h.toFixed(1) + " %" : "-- %";
+                    document.getElementById("tempTime").textContent = timeElapsed;
+                    document.getElementById("humTime").textContent = timeElapsed;
+                }
+
+                let incidentData = null;
+                let hasActiveIncident = false;
+                
+                // Fetch current incident status to display comments only if there's an active incident
+                try {
+                    const incidentResponse = await fetch("/incident/status/");
+                    if (incidentResponse.ok) {
+                        incidentData = await incidentResponse.json();
+                        hasActiveIncident = incidentData && incidentData.is_open;
+                        
+                        // Show comments section only if there's an active incident
+                        const previousCommentsSection = document.getElementById('previous-comments');
+                        if (previousCommentsSection) {
+                            if (hasActiveIncident) {
+                                previousCommentsSection.style.display = 'block';
+                                // Display operator comments
+                                displayOperatorComments(incidentData);
+                                
+                                // Update alert counter display
+                                document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + incidentData.counter;
+                                
+                                // Calculate and display incident level
+                                let incidentLevel = 0;
+                                if (incidentData.counter > 6) incidentLevel = 3;
+                                else if (incidentData.counter > 3) incidentLevel = 2;  // Fixed: was too restrictive
+                                else if (incidentData.counter > 0) incidentLevel = 1;   // Fixed: was too restrictive
+                                
+                                // Optionally update level display if there's a specific element for it
+                                const levelDisplay = document.getElementById('incidentLevel');
+                                if (levelDisplay) {
+                                    levelDisplay.textContent = `Niveau d'incident: ${incidentLevel}`;
+                                }
+                                
+                                // Display the operator who acknowledged the incident first
+                                // Order of priority: op1, then op2, then op3
+                                const ackOperatorDisplay = document.getElementById('ackOperator');
+                                if (ackOperatorDisplay) {
+                                    if (incidentData.op1_ack) {
+                                        ackOperatorDisplay.textContent = `Opérateur : 1 (Accusé de réception effectué)`;
+                                        ackOperatorDisplay.style.color = '#28a745'; // Green for acknowledged
+                                    } else if (incidentData.op2_ack) {
+                                        ackOperatorDisplay.textContent = `Opérateur : 2 (Accusé de réception effectué)`;
+                                        ackOperatorDisplay.style.color = '#28a745';
+                                    } else if (incidentData.op3_ack) {
+                                        ackOperatorDisplay.textContent = `Opérateur : 3 (Accusé de réception effectué)`;
+                                        ackOperatorDisplay.style.color = '#28a745';
+                                    } else {
+                                        ackOperatorDisplay.textContent = `Opérateur : Aucun (En attente d'accusé de réception)`;
+                                        ackOperatorDisplay.style.color = '#dc3545'; // Red for pending
+                                    }
+                                }
+                            } else {
+                                previousCommentsSection.style.display = 'none';
+                                
+                                // Reset the acknowledgment display when no incident is active
+                                const ackOperatorDisplay = document.getElementById('ackOperator');
+                                if (ackOperatorDisplay) {
+                                    ackOperatorDisplay.textContent = `Opérateur : Aucun`;
+                                    ackOperatorDisplay.style.color = '#666';
+                                }
+                            }
+                        }
+                    }
+                } catch (incidentError) {
+                    console.warn("Could not fetch incident status:", incidentError);
+                    // Hide comments section if we can't fetch incident status
+                    const previousCommentsSection = document.getElementById('previous-comments');
+                    if (previousCommentsSection) {
+                        previousCommentsSection.style.display = 'none';
+                    }
+                    
+                    // Also reset the acknowledgment display on error
+                    const ackOperatorDisplay = document.getElementById('ackOperator');
+                    if (ackOperatorDisplay) {
+                        ackOperatorDisplay.textContent = `Opérateur : Aucun`;
+                        ackOperatorDisplay.style.color = '#666';
+                    }
+                }
 
                 // Gestion des incidents
                 const statusElement = document.getElementById("statusState");
@@ -573,17 +819,21 @@
                 const humCard = document.getElementById("humCard");
                 const incidentContainer = document.getElementById("incidentContainer");
 
-                if (t < 2 || t > 8) {
+                if (data && data.temperature !== undefined && (data.temperature < 5 || data.temperature > 25)) {
                     // INCIDENT
-                    statusElement.textContent = `⚠️ INCIDENT : Température hors plage (2-8°C) ! Température actuelle: ${t.toFixed(1)}°C`;
+                    statusElement.textContent = `⚠️ INCIDENT : Température hors plage (5-25°C) ! Température actuelle: ${data.temperature.toFixed(1)}°C`;
                     statusElement.className = "status-state incident";
                     bodyElement.className = "incident";
                     tempCard.className = "metric-card incident";
                     humCard.className = "metric-card incident";
                     incidentContainer.className = "incident-container incident";
 
+                    // Increment local counter and save to localStorage
                     alertCount++;
                     saveAlertCount();
+                    
+                    // Update the counter display
+                    document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + alertCount;
                 } else {
                     // NORMAL - réinitialiser le compteur
                     statusElement.textContent = "✅ Pas d'incident";
@@ -604,19 +854,61 @@
                     }
                 }
 
-                // Mise à jour du compteur
-                document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + alertCount;
+                // Update counter display - prioritize server counter if available
+                if (incidentData && hasActiveIncident) {
+                    document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + incidentData.counter;
+                } else {
+                    document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + alertCount;
+                }
 
-                // Affichage des opérateurs selon le compteur
-                document.getElementById("op1").style.display = alertCount > 0 ? "block" : "none";
-                document.getElementById("op2").style.display = alertCount > 3 ? "block" : "none";
-                document.getElementById("op3").style.display = alertCount > 6 ? "block" : "none";
+                // Determine which operator should respond based on incident level
+                let incidentRequiredLevel = 0;
+                
+                // First try to get the level from the fetched incident data
+                if (incidentData && hasActiveIncident) {
+                    // Use same logic as in display section for consistency
+                    if (incidentData.counter > 6) incidentRequiredLevel = 3;
+                    else if (incidentData.counter > 3) incidentRequiredLevel = 2;
+                    else if (incidentData.counter > 0) incidentRequiredLevel = 1;
+                } else {
+                    // Fallback to local calculation if no active incident
+                    incidentRequiredLevel = getRequiredLevel(alertCount);
+                }
+                
+                // Cacher tous les opérateurs par défaut
+                document.getElementById("op1").style.display = "none";
+                document.getElementById("op2").style.display = "none";
+                document.getElementById("op3").style.display = "none";
+                
+                // Afficher l'opérateur approprié s'il correspond au niveau requis et à l'utilisateur connecté
+                if (incidentRequiredLevel > 0) {
+                    const userOperatorElement = document.getElementById('userOperatorNumber');
+                    if (userOperatorElement) {
+                        const userOperatorNumber = parseInt(userOperatorElement.textContent);
+                        console.log('User operator number:', userOperatorNumber, 'Required level:', incidentRequiredLevel); // Debug log
+                        
+                        // Si l'utilisateur est l'opérateur requis pour le niveau d'incident
+                        if (userOperatorNumber > 0 && userOperatorNumber === incidentRequiredLevel) {
+                            document.getElementById("op" + incidentRequiredLevel).style.display = "block";
+                            console.log('Showing operator box for level:', incidentRequiredLevel); // Debug log
+                        } else {
+                            console.log('Condition not met - userOp:', userOperatorNumber, 'reqLevel:', incidentRequiredLevel); // Debug log
+                        }
+                    } else {
+                        console.log('User operator element not found'); // Debug log
+                    }
+                } else {
+                    console.log('Incident required level is 0'); // Debug log
+                }
 
             } catch (error) {
                 console.error("Erreur lors de la récupération des données:", error);
-                document.getElementById("statusState").textContent = "❌ Erreur de connexion au serveur";
-                document.getElementById("statusState").className = "status-state incident";
-                document.body.className = "incident";
+                // Show server error only for network errors
+                if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+                    document.getElementById("statusState").textContent = "❌ Erreur de connexion au serveur";
+                    document.getElementById("statusState").className = "status-state incident";
+                    document.body.className = "incident";
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Dht11(models.Model):
@@ -90,3 +91,17 @@ class Incident(models.Model):
                 'ack_date': self.op3_saved_at.isoformat() if self.op3_saved_at else None
             }
         return None
+
+
+class OperatorProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    operator_number = models.IntegerField(default=1)  # 1, 2, or 3
+    phone_number = models.CharField(max_length=15, blank=True)
+    email = models.EmailField(blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - Operator {self.operator_number}"
+
+    class Meta:
+        verbose_name = "Operator Profile"
+        verbose_name_plural = "Operator Profiles"
