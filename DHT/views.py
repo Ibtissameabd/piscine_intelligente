@@ -23,12 +23,17 @@ def dashboard(request):
 
 def latest_json(request):
     # Fournit la dernière mesure en JSON (sans passer par api.py)
-    last = Dht11.objects.order_by('-dt').values('temp', 'hum', 'dt').first()
+    last = Dht11.objects.order_by('-dt').values('temp', 'hum', 'ph', 'chlorine', 'turbidity', 'flow_rate', 'water_level', 'dt').first()
     if not last:
         return JsonResponse({"detail": "no data"}, status=404)
     return JsonResponse({
         "temperature": last["temp"],
         "humidity":    last["hum"],
+        "ph":          last["ph"],
+        "chlorine":    last["chlorine"],
+        "turbidity":   last["turbidity"],
+        "flow_rate":   last["flow_rate"],
+        "water_level": last["water_level"],
         "timestamp":   last["dt"].isoformat()
     })
 @login_required
@@ -39,6 +44,13 @@ def graph_temp(request):
 @login_required
 def graph_hum(request):
     return render(request, "graph_hum.html")
+
+@login_required
+def turbidity_history(request):
+    # Get turbidity data with timestamps
+    from .models import Dht11
+    turbidity_data = Dht11.objects.filter(turbidity__isnull=False).order_by('-dt')
+    return render(request, "turbidity_history.html", {"turbidity_data": turbidity_data})
 
 @login_required
 def incident_archive(request):

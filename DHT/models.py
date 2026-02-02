@@ -5,13 +5,18 @@ from django.contrib.auth.models import User
 class Dht11(models.Model):
     temp = models.FloatField(null=True, blank=True)
     hum = models.FloatField(null=True, blank=True)
+    ph = models.FloatField(null=True, blank=True)  # Niveau de pH
+    chlorine = models.FloatField(null=True, blank=True)  # Concentration de chlore en ppm
+    turbidity = models.FloatField(null=True, blank=True)  # Turbidité en NTU
+    flow_rate = models.FloatField(null=True, blank=True)  # Débit d'eau en L/min
+    water_level = models.FloatField(null=True, blank=True)  # Niveau d'eau en cm
     dt = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-dt"]
 
     def __str__(self):
-        return f"{self.dt} -> T={self.temp}°C, H={self.hum}%"
+        return f"{self.dt} -> T={self.temp}°C, H={self.hum}%, pH={self.ph}, Cl={self.chlorine}ppm"
 
 class Incident(models.Model):
     start_at = models.DateTimeField(auto_now_add=True)         # début incident

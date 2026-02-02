@@ -5,6 +5,7 @@ from . import api
 urlpatterns = [
     # API endpoints
     path("latest/", views.latest_json, name="latest_json"),
+    path("dlist/", api.Dlist, name="dlist"),
     path("api/",api.Dlist,name='json'),
     path("api/post/",api.Dhtviews.as_view(),name='json'),
     path("api/dashboard/", api.dashboard_api, name="dashboard_api"),
@@ -14,6 +15,7 @@ urlpatterns = [
 
     path("graph_temp/", views.graph_temp, name="graph_temp"),
     path("graph_hum/", views.graph_hum, name="graph_hum"),
+    path("turbidity_history/", views.turbidity_history, name="turbidity_history"),
 
     path("incident/status/", api.IncidentStatus.as_view(), name="incident_status"),
     path("incident/update/", api.IncidentUpdateOperator.as_view(), name="incident_update"),

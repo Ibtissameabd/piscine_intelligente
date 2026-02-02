@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .utils import send_telegram
 
-MIN_OK = 5
+MIN_OK = 15
 MAX_OK = 25
 
 @api_view(['GET'])
@@ -33,10 +33,28 @@ class Dhtviews(generics.CreateAPIView):
         obj = serializer.save()
 
         t = obj.temp
+        ph = obj.ph
+        cl = obj.chlorine
+        turb = obj.turbidity
+        
         if t is None:
             return
 
+        # Déterminer si c'est un incident basé sur plusieurs paramètres
         is_incident = (t < MIN_OK or t > MAX_OK)
+        
+        # Vérifier aussi les autres paramètres
+        if ph is not None:
+            if ph < 7.2 or ph > 7.6:  # Plage normale de pH
+                is_incident = True
+        
+        if cl is not None:
+            if cl < 1.0 or cl > 3.0:  # Plage normale de chlore
+                is_incident = True
+        
+        if turb is not None:
+            if turb < 0.0 or turb > 1.0:  # Plage normale de turbidité
+                is_incident = True
 
         # récupérer l'incident ouvert (s'il existe)
         incident = Incident.objects.filter(is_open=True).order_by("-start_at").first()
@@ -53,17 +71,30 @@ class Dhtviews(generics.CreateAPIView):
 
             #Alertes (Email, Telegram, WhatsApp)
             try:
+                # Préparer message d'alerte avec tous les paramètres
+                alert_message = f"Alerte Pool Olympique:\n"
+                if t is not None:
+                    alert_message += f"Température: {t:.1f} °C\n"
+                if ph is not None:
+                    alert_message += f"pH: {ph:.2f}\n"
+                if cl is not None:
+                    alert_message += f"Chlore: {cl:.2f} ppm\n"
+                if turb is not None:
+                    alert_message += f"Turbidité: {turb:.2f} NTU\n"
+                alert_message += f"Heure: {obj.dt}"
+                
                 send_mail(
-                    subject="⚠️ Alerte Température",
-                    message=f"Température: {t:.1f} °C à {obj.dt}.",
-                    from_email=["abibtissame@gmail.com"],
+                    subject="⚠️ Alerte Pool Olympique",
+                    message=alert_message,
+                    from_email={"abibtissame@gmail.com"},
+                    recipient_list={"ibtissam.abdoussi.23@ump.ac.ma"},
                     #recipient_list=["elmouss@yahoo.com"],
                     fail_silently=True,
                 )
             except Exception:
                 pass
 
-            msg = f"⚠️ Alerte DHT11: {t:.1f} °C à {obj.dt}"
+            msg = f"⚠️ Alerte Pool Olympique: {alert_message}"
             send_telegram(msg)
 
             try:
@@ -74,7 +105,7 @@ class Dhtviews(generics.CreateAPIView):
 
                 message = client.messages.create(
                     from_='whatsapp:+14155238886',
-                    body='Il y a une alerte importante sur votre Capteur',
+                    body='Pool Olympique: Une alerte importante détectée',
                     to='whatsapp:+212664520040'
                 )
                 print(message.sid)
@@ -82,7 +113,7 @@ class Dhtviews(generics.CreateAPIView):
                 pass
 
         else:
-            # température OK -> si incident ouvert, on le ferme
+            # Paramètres OK -> si incident ouvert, on le ferme
             if incident is not None:
                 incident.is_open = False
                 incident.end_at = timezone.now()
@@ -159,10 +190,15 @@ def dashboard_api(request):
         last_data = {
             "temp": last.temp,
             "hum": last.hum,
+            "ph": last.ph,
+            "chlorine": last.chlorine,
+            "turbidity": last.turbidity,
+            "flow_rate": last.flow_rate,
+            "water_level": last.water_level,
             "dt": last.dt.isoformat(),
         }
     else:
-        last_data = {"temp": None, "hum": None, "dt": None}
+        last_data = {"temp": None, "hum": None, "ph": None, "chlorine": None, "turbidity": None, "flow_rate": None, "water_level": None, "dt": None}
 
     # Récupérer l'incident en cours
     incident = Incident.objects.filter(is_open=True).order_by('-start_at').first()

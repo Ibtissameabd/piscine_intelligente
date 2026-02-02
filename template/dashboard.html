@@ -31,8 +31,8 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            max-width: 900px;
-            width: 100%;
+            max-width: 1200px;
+            width: 90%;
             margin: 0 auto;
         }
 
@@ -368,6 +368,75 @@
             margin: 0;
             color: #212529;
         }
+        
+        /* Navigation Buttons */
+        .nav-button {
+            display: inline-block;
+            padding: 8px 12px;
+            margin-left: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        
+        /* Pool Analytics Styles */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .analytics-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .analytics-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .analytics-value {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .status-indicator {
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .status-ok {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-alert {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
         @media (max-width: 768px) {
             .metrics {
@@ -390,12 +459,16 @@
 </head>
 <body class="normal">
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h1>🌡️ Dashboard Température & Humidité (DHT11)</h1>
-                    <div style="text-align: right;">
-                        <p>Bienvenue, <strong>{{ user.username|default:"Invité" }}</strong></p>
-                        <p style="display: none;" id="userOperatorNumber">{{ operator_number|default:0 }}</p>
+        <div style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+                    <h1 style="text-align: center; margin-bottom: 15px;">🌡️ Dashboard Température & Humidité (DHT11)</h1>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <p style="margin: 0;">Bienvenue, <strong>{{ user.username|default:"Invité" }}</strong></p>
+                        <div style="margin-left: auto;">
+                            <a href="/admin/" class="nav-button">Admin space</a>
+                            <a href="/api/post/" class="nav-button">Essai post</a>
+                        </div>
                     </div>
+                    <p style="display: none;" id="userOperatorNumber">{{ operator_number|default:0 }}</p>
                 </div>
 
         <!-- Metrics Cards -->
@@ -416,6 +489,50 @@
                 <button onclick="location.href='/graph_hum/'">
                     📊 Voir graphe humidité
                 </button>
+            </div>
+        </div>
+        
+        <!-- Olympic Pool Analytics Cards -->
+        <div class="metrics">
+            <div class="metric-card normal" id="turbidityCard">
+                <h2>🌊 Turbidité</h2>
+                <div class="metric-value" id="turbidityValue">-- NTU</div>
+                <div class="metric-time" id="turbidityTime">--</div>
+                <div class="status-indicator" id="turbidityStatus">--</div>
+                <button onclick="location.href='/turbidity_history/'">
+                    📊 Voir historique turbidité
+                </button>
+            </div>
+
+            <div class="metric-card normal" id="waterLevelCard">
+                <h2>📏 Niveau d'eau</h2>
+                <div class="metric-value" id="waterLevelValue">-- cm</div>
+                <div class="metric-time" id="waterLevelTime">--</div>
+                <div class="status-indicator" id="waterLevelStatus">--</div>
+                <button onclick="location.href='/graph_water_level/'">
+                    📊 Voir graphe niveau d'eau
+                </button>
+            </div>
+        </div>
+        
+        <!-- Pool Quality Analytics -->
+        <div class="incident-container normal" id="analyticsContainer">
+            <div class="status-section">
+                <div class="status-title">📊 Analyse de Qualité de la Piscine Olympique</div>
+                <div class="analytics-grid">
+                    <div class="analytics-item">
+                        <span class="analytics-label">Indice de Qualité:</span>
+                        <span class="analytics-value" id="qualityIndex">--/10</span>
+                    </div>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Conformité aux Normes:</span>
+                        <span class="analytics-value" id="complianceStatus">--</span>
+                    </div>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Statut Général:</span>
+                        <span class="analytics-value" id="overallStatus">--</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -644,6 +761,130 @@
 
             return `Il y a ${parts.join(', ')}`;
         }
+        
+        // Fonction pour mettre à jour le statut d'un paramètre
+        function updateParameterStatus(paramName, value, min, max, label) {
+            const statusElement = document.getElementById(paramName + 'Status');
+            
+            if (value === null || value === undefined) {
+                statusElement.textContent = 'N/A';
+                statusElement.className = 'status-indicator status-warning';
+                return;
+            }
+            
+            // Pour tous les paramètres, vérifier la plage complète
+            if (value >= min && value <= max) {
+                statusElement.textContent = 'Normal';
+                statusElement.className = 'status-indicator status-ok';
+            } else {
+                statusElement.textContent = 'Hors norme';
+                statusElement.className = 'status-indicator status-alert';
+            }
+        }
+        
+        // Fonction pour calculer l'analyse de qualité de la piscine
+        function calculatePoolQuality(data) {
+            const t = data.temperature;
+            const ph = data.ph;
+            const cl = data.chlorine;
+            const turb = data.turbidity;
+            const level = data.water_level;
+            
+            // Calculer l'indice de qualité (sur 10)
+            let qualityScore = 0;
+            
+            // Score de température (sur 2 points)
+            if (t !== null && t !== undefined) {
+                if (t >= 15 && t <= 25) {
+                    qualityScore += 2.0;
+                } else {
+                    // Calculer le score basé sur la proximité de la plage normale
+                    const tempDeviation = Math.min(Math.abs(t - 15), Math.abs(t - 25));
+                    qualityScore += Math.max(0.0, 2.0 - tempDeviation * 0.1);
+                }
+            }
+            
+            // Score de pH (sur 2 points)
+            if (ph !== null && ph !== undefined) {
+                if (ph >= 7.2 && ph <= 7.6) {
+                    qualityScore += 2.0;
+                } else {
+                    const phDeviation = Math.min(Math.abs(ph - 7.2), Math.abs(ph - 7.6));
+                    qualityScore += Math.max(0.0, 2.0 - phDeviation * 0.5);
+                }
+            }
+            
+            // Score de chlore (sur 2 points)
+            if (cl !== null && cl !== undefined) {
+                if (cl >= 1.0 && cl <= 3.0) {
+                    qualityScore += 2.0;
+                } else {
+                    const clDeviation = Math.min(Math.abs(cl - 1.0), Math.abs(cl - 3.0));
+                    qualityScore += Math.max(0.0, 2.0 - clDeviation * 0.2);
+                }
+            }
+            
+            // Score de turbidité (sur 2 points)
+            if (turb !== null && turb !== undefined) {
+                if (turb >= 0.0 && turb <= 1.0) {
+                    qualityScore += 2.0;
+                } else {
+                    const turbDeviation = Math.min(Math.abs(turb - 0.0), Math.abs(turb - 1.0));
+                    qualityScore += Math.max(0.0, 2.0 - turbDeviation);
+                }
+            }
+            
+            // Score de niveau d'eau (sur 2 points)
+            if (level !== null && level !== undefined) {
+                if (level >= 7.0 && level <= 25.0) {
+                    qualityScore += 2.0;
+                } else {
+                    qualityScore += 1.0; // Moins critique que les autres paramètres
+                }
+            }
+            
+            // Afficher l'indice de qualité
+            const qualityIndexElement = document.getElementById('qualityIndex');
+            if (qualityIndexElement) {
+                qualityIndexElement.textContent = qualityScore.toFixed(1) + '/10';
+            }
+            
+            // Déterminer le statut de conformité
+            const complianceStatusElement = document.getElementById('complianceStatus');
+            if (complianceStatusElement) {
+                if (qualityScore >= 8.0) {
+                    complianceStatusElement.textContent = 'Excellent';
+                    complianceStatusElement.style.color = '#28a745';
+                } else if (qualityScore >= 6.0) {
+                    complianceStatusElement.textContent = 'Bon';
+                    complianceStatusElement.style.color = '#ffc107';
+                } else if (qualityScore >= 4.0) {
+                    complianceStatusElement.textContent = 'Moyen';
+                    complianceStatusElement.style.color = '#fd7e14';
+                } else {
+                    complianceStatusElement.textContent = 'Mauvais';
+                    complianceStatusElement.style.color = '#dc3545';
+                }
+            }
+            
+            // Déterminer le statut général
+            const overallStatusElement = document.getElementById('overallStatus');
+            if (overallStatusElement) {
+                if (qualityScore >= 8.0) {
+                    overallStatusElement.textContent = 'Optimal pour compétition';
+                    overallStatusElement.style.color = '#28a745';
+                } else if (qualityScore >= 6.0) {
+                    overallStatusElement.textContent = 'Acceptable';
+                    overallStatusElement.style.color = '#ffc107';
+                } else if (qualityScore >= 4.0) {
+                    overallStatusElement.textContent = 'À surveiller';
+                    overallStatusElement.style.color = '#fd7e14';
+                } else {
+                    overallStatusElement.textContent = 'Intervention requise';
+                    overallStatusElement.style.color = '#dc3545';
+                }
+            }
+        }
 
         // Déterminer le niveau requis selon le compteur
         function getRequiredLevel(counter) {
@@ -719,18 +960,39 @@
                     // Set default values when no sensor data is available
                     document.getElementById("tempValue").textContent = "-- °C";
                     document.getElementById("humValue").textContent = "-- %";
+                    document.getElementById("turbidityValue").textContent = "-- NTU";
+                    document.getElementById("waterLevelValue").textContent = "-- cm";
                     document.getElementById("tempTime").textContent = "--";
                     document.getElementById("humTime").textContent = "--";
+                    document.getElementById("turbidityTime").textContent = "--";
+                    document.getElementById("waterLevelTime").textContent = "--";
+                    
+                    // Reset status indicators
+                    document.getElementById("turbidityStatus").textContent = "--";
+                    document.getElementById("waterLevelStatus").textContent = "--";
                 } else {
                     const t = data.temperature;
                     const h = data.humidity;
+                    const turb = data.turbidity;
+                    const level = data.water_level;
                     const timeElapsed = data.timestamp ? getTimeElapsed(data.timestamp) : '--';
 
                     // Affichage des valeurs
                     document.getElementById("tempValue").textContent = t !== null && t !== undefined ? t.toFixed(1) + " °C" : "-- °C";
                     document.getElementById("humValue").textContent = h !== null && h !== undefined ? h.toFixed(1) + " %" : "-- %";
+                    document.getElementById("turbidityValue").textContent = turb !== null && turb !== undefined ? turb.toFixed(2) + " NTU" : "-- NTU";
+                    document.getElementById("waterLevelValue").textContent = level !== null && level !== undefined ? level.toFixed(1) + " cm" : "-- cm";
                     document.getElementById("tempTime").textContent = timeElapsed;
                     document.getElementById("humTime").textContent = timeElapsed;
+                    document.getElementById("turbidityTime").textContent = timeElapsed;
+                    document.getElementById("waterLevelTime").textContent = timeElapsed;
+                    
+                    // Mettre à jour les indicateurs de statut
+                    updateParameterStatus('turbidity', turb, 0, 1.0, 'Turbidité');
+                    updateParameterStatus('waterLevel', level, 7.0, 25.0, 'Niveau d\'eau');
+                    
+                    // Calculer et afficher l'analyse de qualité de la piscine
+                    calculatePoolQuality(data);
                 }
 
                 let incidentData = null;
@@ -817,15 +1079,45 @@
                 const bodyElement = document.body;
                 const tempCard = document.getElementById("tempCard");
                 const humCard = document.getElementById("humCard");
+                const turbidityCard = document.getElementById("turbidityCard");
+                const waterLevelCard = document.getElementById("waterLevelCard");
                 const incidentContainer = document.getElementById("incidentContainer");
+                
+                // Vérifier tous les paramètres pour déterminer le statut global
+                let isIncident = false;
+                if (data && data.temperature !== undefined) {
+                    if (data.temperature < 15 || data.temperature > 25) {
+                        isIncident = true;
+                    }
+                }
+                
+                if (data && data.ph !== undefined) {
+                    if (data.ph < 7.2 || data.ph > 7.6) {
+                        isIncident = true;
+                    }
+                }
+                
+                if (data && data.chlorine !== undefined) {
+                    if (data.chlorine < 1.0 || data.chlorine > 3.0) {
+                        isIncident = true;
+                    }
+                }
+                
+                if (data && data.turbidity !== undefined) {
+                    if (data.turbidity < 0.0 || data.turbidity > 1.0) {
+                        isIncident = true;
+                    }
+                }
 
-                if (data && data.temperature !== undefined && (data.temperature < 5 || data.temperature > 25)) {
+                if (isIncident) {
                     // INCIDENT
-                    statusElement.textContent = `⚠️ INCIDENT : Température hors plage (5-25°C) ! Température actuelle: ${data.temperature.toFixed(1)}°C`;
+                    statusElement.textContent = `⚠️ INCIDENT : Un ou plusieurs paramètres hors normes olympiques !`;
                     statusElement.className = "status-state incident";
                     bodyElement.className = "incident";
                     tempCard.className = "metric-card incident";
                     humCard.className = "metric-card incident";
+                    turbidityCard.className = "metric-card incident";
+                    waterLevelCard.className = "metric-card incident";
                     incidentContainer.className = "incident-container incident";
 
                     // Increment local counter and save to localStorage
@@ -836,11 +1128,13 @@
                     document.getElementById("alertCounter").textContent = "Compteur d'alertes : " + alertCount;
                 } else {
                     // NORMAL - réinitialiser le compteur
-                    statusElement.textContent = "✅ Pas d'incident";
+                    statusElement.textContent = "✅ Tous les paramètres sont conformes aux normes olympiques";
                     statusElement.className = "status-state ok";
                     bodyElement.className = "normal";
                     tempCard.className = "metric-card normal";
                     humCard.className = "metric-card normal";
+                    turbidityCard.className = "metric-card normal";
+                    waterLevelCard.className = "metric-card normal";
                     incidentContainer.className = "incident-container normal";
 
                     if (alertCount > 0) {
